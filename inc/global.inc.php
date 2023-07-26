@@ -293,7 +293,11 @@ spl_autoload_register( 'my_autoloader' );
  */
 function h( $text )
 {
-	return htmlentities( $text , ENT_QUOTES , 'UTF-8' );
+    if( is_string( $text ) )
+    {
+        return htmlentities( $text , ENT_QUOTES , 'UTF-8' );
+    }
+    return $text;
 }
 
 /**
