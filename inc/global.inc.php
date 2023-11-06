@@ -1626,8 +1626,19 @@ if ( function_exists( 'bindtextdomain' ) )
 		$locale = $locale_default;
 	}
 
-	putenv( 'LC_ALL=' . $locale );
-	putenv( 'LANGUAGE=' . $locale );
+	if (function_exists('putenv') && !in_array('putenv', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+		// It's safe to call putenv()
+		putenv( 'LC_ALL=' . $locale );
+		putenv( 'LANGUAGE=' . $locale );
+	} else {
+		// putenv() is disabled; handle the fallback
+		$ini_path = php_ini_loaded_file();
+		$message  = 'putenv() is disabled, please enable it in php.ini and try again.';
+		if( $ini_path !== false) {
+			$message.= ' <b>php.ini path: ' . $ini_path . '</b> ';
+		}
+		trigger_error($message, E_USER_ERROR);
+	}
 
 	if ( ( ! isset( $_COOKIE[ 'pmllocale' ] ) ) || ( $_COOKIE[ 'pmllocale' ] !== $locale ) )
 	{
