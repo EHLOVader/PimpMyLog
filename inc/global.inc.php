@@ -157,7 +157,8 @@ define( 'TIME_ZONE_SUPPORT_URL' , 'http://support.pimpmylog.com/discussions/prob
 | http://support.pimpmylog.com/discussions/problems/56-regex-tester-match-is-not-a-valid-associative-array
 |
 */
-if ( get_magic_quotes_gpc() )
+if (  version_compare(PHP_VERSION, '7.4', '<') &&
+      get_magic_quotes_gpc() )
 {
 	$process = array( &$_GET , &$_POST , &$_COOKIE , &$_REQUEST );
 	while ( list( $key , $val ) = each( $process ) )
@@ -292,7 +293,11 @@ spl_autoload_register( 'my_autoloader' );
  */
 function h( $text )
 {
-	return htmlentities( $text , ENT_QUOTES , 'UTF-8' );
+    if( is_string( $text ) )
+    {
+        return htmlentities( $text , ENT_QUOTES , 'UTF-8' );
+    }
+    return $text;
 }
 
 /**
@@ -1621,8 +1626,19 @@ if ( function_exists( 'bindtextdomain' ) )
 		$locale = $locale_default;
 	}
 
-	putenv( 'LC_ALL=' . $locale );
-	putenv( 'LANGUAGE=' . $locale );
+	if (function_exists('putenv') && !in_array('putenv', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+		// It's safe to call putenv()
+		putenv( 'LC_ALL=' . $locale );
+		putenv( 'LANGUAGE=' . $locale );
+	} else {
+		// putenv() is disabled; handle the fallback
+		$ini_path = php_ini_loaded_file();
+		$message  = 'putenv() is disabled, please enable it in php.ini and try again.';
+		if( $ini_path !== false) {
+			$message.= ' <b>php.ini path: ' . $ini_path . '</b> ';
+		}
+		trigger_error($message, E_USER_ERROR);
+	}
 
 	if ( ( ! isset( $_COOKIE[ 'pmllocale' ] ) ) || ( $_COOKIE[ 'pmllocale' ] !== $locale ) )
 	{
